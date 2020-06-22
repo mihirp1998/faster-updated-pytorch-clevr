@@ -8,6 +8,8 @@ from __future__ import division
 from __future__ import print_function
 
 import torch
+import ipdb
+st = ipdb.set_trace
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -46,6 +48,7 @@ class vgg16(_fasterRCNN):
     self.RCNN_top = vgg.classifier
 
     # not using the last maxpool layer
+    # st()
     self.RCNN_cls_score = nn.Linear(4096, self.n_classes)
 
     if self.class_agnostic:

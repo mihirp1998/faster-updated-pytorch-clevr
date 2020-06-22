@@ -6,6 +6,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import ipdb
+st = ipdb.set_trace
 
 import _init_paths
 import os
@@ -47,22 +49,22 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='pascal_voc', type=str)
+                      default='clevr_trainval', type=str,required=True)
   parser.add_argument('--cfg', dest='cfg_file',
                       help='optional config file',
                       default='cfgs/vgg16.yml', type=str)
   parser.add_argument('--net', dest='net',
                       help='vgg16, res50, res101, res152',
-                      default='res101', type=str)
+                      default='vgg16', type=str)
   parser.add_argument('--set', dest='set_cfgs',
                       help='set config keys', default=None,
                       nargs=argparse.REMAINDER)
-  parser.add_argument('--load_dir', dest='load_dir',
+  parser.add_argument('--load_model', dest='load_model',
                       help='directory to load models', default="models",
-                      type=str)
+                      type=str,required=True)
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
-                      action='store_true')
+                      action='store_true',default=True)
   parser.add_argument('--ls', dest='large_scale',
                       help='whether use large imag scale',
                       action='store_true')
@@ -71,19 +73,19 @@ def parse_args():
                       action='store_true')
   parser.add_argument('--cag', dest='class_agnostic',
                       help='whether perform class_agnostic bbox regression',
-                      action='store_true')
+                      action='store_true',default=True)
   parser.add_argument('--parallel_type', dest='parallel_type',
                       help='which part of model to parallel, 0: all, 1: model before roi pooling',
                       default=0, type=int)
-  parser.add_argument('--checksession', dest='checksession',
-                      help='checksession to load model',
-                      default=1, type=int)
-  parser.add_argument('--checkepoch', dest='checkepoch',
-                      help='checkepoch to load network',
-                      default=1, type=int)
-  parser.add_argument('--checkpoint', dest='checkpoint',
-                      help='checkpoint to load network',
-                      default=10021, type=int)
+  # parser.add_argument('--checksession', dest='checksession',
+  #                     help='checksession to load model',
+  #                     default=1, type=int)
+  # parser.add_argument('--checkepoch', dest='checkepoch',
+  #                     help='checkepoch to load network',
+  #                     default=1, type=int)
+  # parser.add_argument('--checkpoint', dest='checkpoint',
+  #                     help='checkpoint to load network',
+  #                     default=10021, type=int)
   parser.add_argument('--vis', dest='vis',
                       help='visualization mode',
                       action='store_true')
@@ -95,9 +97,7 @@ momentum = cfg.TRAIN.MOMENTUM
 weight_decay = cfg.TRAIN.WEIGHT_DECAY
 
 if __name__ == '__main__':
-
   args = parse_args()
-
   print('Called with args:')
   print(args)
 
@@ -125,32 +125,39 @@ if __name__ == '__main__':
       args.imdb_name = "vg_150-50-50_minitrain"
       args.imdbval_name = "vg_150-50-50_minival"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-
+  elif args.dataset == "clevr_trainval":
+      args.imdb_name = "clevr_val"
+      args.imdbval_name = "clevr_val"
+      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
+  elif args.dataset == "clevrvqa":
+      args.imdb_name = f"clevrvqa_val"
+      args.imdbval_name = f"clevrvqa_val"
+      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
+  elif args.dataset == "carla":
+      args.imdb_name = f"carla_val"
+      args.imdbval_name = f"carla_val"
+      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']            
   args.cfg_file = "cfgs/{}_ls.yml".format(args.net) if args.large_scale else "cfgs/{}.yml".format(args.net)
-
   if args.cfg_file is not None:
     cfg_from_file(args.cfg_file)
   if args.set_cfgs is not None:
     cfg_from_list(args.set_cfgs)
-
   print('Using config:')
   pprint.pprint(cfg)
-
   cfg.TRAIN.USE_FLIPPED = False
   imdb, roidb, ratio_list, ratio_index = combined_roidb(args.imdbval_name, False)
   imdb.competition_mode(on=True)
-
   print('{:d} roidb entries'.format(len(roidb)))
-
-  input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
-  if not os.path.exists(input_dir):
-    raise Exception('There is no input directory for loading network from ' + input_dir)
-  load_name = os.path.join(input_dir,
-    'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
-
+  # input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
+  # if not os.path.exists(input_dir):
+  #   raise Exception('There is no input directory for loading network from ' + input_dir)
+  # load_name = os.path.join(input_dir,
+  #   'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+  load_name = args.load_model
+  # st()
   # initilize the network here.
   if args.net == 'vgg16':
-    fasterRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res101':
     fasterRCNN = resnet(imdb.classes, 101, pretrained=False, class_agnostic=args.class_agnostic)
   elif args.net == 'res50':
@@ -233,7 +240,7 @@ if __name__ == '__main__':
               im_info.resize_(data[1].size()).copy_(data[1])
               gt_boxes.resize_(data[2].size()).copy_(data[2])
               num_boxes.resize_(data[3].size()).copy_(data[3])
-
+      # st()
       det_tic = time.time()
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
@@ -271,7 +278,11 @@ if __name__ == '__main__':
       detect_time = det_toc - det_tic
       misc_tic = time.time()
       if vis:
+          import glob
           im = cv2.imread(imdb.image_path_at(i))
+          import random
+          val = imdb.image_path_at(i)
+          im = cv2.imread(val)      
           im2show = np.copy(im)
       for j in xrange(1, imdb.num_classes):
           inds = torch.nonzero(scores[:,j]>thresh).view(-1)
@@ -289,6 +300,7 @@ if __name__ == '__main__':
             cls_dets = cls_dets[order]
             keep = nms(cls_boxes[order, :], cls_scores[order], cfg.TEST.NMS)
             cls_dets = cls_dets[keep.view(-1).long()]
+            # st()
             if vis:
               im2show = vis_detections(im2show, imdb.classes[j], cls_dets.cpu().numpy(), 0.3)
             all_boxes[j][i] = cls_dets.cpu().numpy()

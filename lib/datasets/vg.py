@@ -227,6 +227,7 @@ class vg(imdb):
             obj_name = obj.find('name').text.lower().strip()
             if obj_name in self._class_to_ind:
                 bbox = obj.find('bndbox')
+                print(bbox)
                 x1 = max(0,float(bbox.find('xmin').text))
                 y1 = max(0,float(bbox.find('ymin').text))
                 x2 = min(width-1,float(bbox.find('xmax').text))

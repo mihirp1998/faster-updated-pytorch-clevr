@@ -9,9 +9,12 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import ipdb
+st = ipdb.set_trace
 
 __sets = {}
 from datasets.pascal_voc import pascal_voc
+from datasets.clevr import clevr
 from datasets.coco import coco
 from datasets.imagenet import imagenet
 from datasets.vg import vg
@@ -51,7 +54,24 @@ for version in ['150-50-20', '150-50-50', '500-150-80', '750-250-150', '1750-700
     for split in ['minitrain', 'smalltrain', 'train', 'minival', 'smallval', 'val', 'test']:
         name = 'vg_{}_{}'.format(version,split)
         __sets[name] = (lambda split=split, version=version: vg(version, split))
-        
+
+for split in ['train', 'val', 'trainval', 'test']:
+    name = 'clevr_{}'.format(split)
+    __sets[name] = (lambda split=split:
+                    clevr('clevr',split))
+
+
+for split in ['val', 'train100','train50','train200']:
+    name = 'clevrvqa_{}'.format(split)
+    __sets[name] = (lambda split=split:
+                    clevr('clevrvqa',split))
+
+
+for split in ['val', 'train100','train50','train200']:
+    name = 'carla_{}'.format(split)
+    __sets[name] = (lambda split=split:
+                    clevr('carla',split))
+
 # set up image net.
 for split in ['train', 'val', 'val1', 'val2', 'test']:
     name = 'imagenet_{}'.format(split)

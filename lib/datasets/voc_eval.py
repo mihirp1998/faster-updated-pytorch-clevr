@@ -11,6 +11,8 @@ import xml.etree.ElementTree as ET
 import os
 import pickle
 import numpy as np
+import ipdb
+st = ipdb.set_trace
 
 def parse_rec(filename):
   """ Parse a PASCAL VOC xml file """
@@ -23,6 +25,7 @@ def parse_rec(filename):
     obj_struct['truncated'] = int(obj.find('truncated').text)
     obj_struct['difficult'] = int(obj.find('difficult').text)
     bbox = obj.find('bndbox')
+    print(bbox)
     obj_struct['bbox'] = [int(bbox.find('xmin').text),
                           int(bbox.find('ymin').text),
                           int(bbox.find('xmax').text),
@@ -130,6 +133,7 @@ def voc_eval(detpath,
   # extract gt objects for this class
   class_recs = {}
   npos = 0
+  # st()
   for imagename in imagenames:
     R = [obj for obj in recs[imagename] if obj['name'] == classname]
     bbox = np.array([x['bbox'] for x in R])
@@ -167,7 +171,6 @@ def voc_eval(detpath,
       bb = BB[d, :].astype(float)
       ovmax = -np.inf
       BBGT = R['bbox'].astype(float)
-
       if BBGT.size > 0:
         # compute overlaps
         # intersection

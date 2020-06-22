@@ -8,6 +8,8 @@ from torch.autograd import Variable
 import numpy as np
 from model.utils.config import cfg
 from model.rpn.rpn import _RPN
+import ipdb
+st = ipdb.set_trace
 
 from model.roi_layers import ROIAlign, ROIPool
 
@@ -46,7 +48,7 @@ class _fasterRCNN(nn.Module):
         im_info = im_info.data
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
-
+        
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
@@ -62,6 +64,8 @@ class _fasterRCNN(nn.Module):
             rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
             rois_inside_ws = Variable(rois_inside_ws.view(-1, rois_inside_ws.size(2)))
             rois_outside_ws = Variable(rois_outside_ws.view(-1, rois_outside_ws.size(2)))
+            rpn_loss_cls = torch.unsqueeze(rpn_loss_cls, 0)
+            rpn_loss_bbox = torch.unsqueeze(rpn_loss_bbox, 0)            
         else:
             rois_label = None
             rois_target = None
@@ -90,6 +94,7 @@ class _fasterRCNN(nn.Module):
             bbox_pred = bbox_pred_select.squeeze(1)
 
         # compute object classification probability
+        # st()
         cls_score = self.RCNN_cls_score(pooled_feat)
         cls_prob = F.softmax(cls_score, 1)
 
@@ -102,7 +107,9 @@ class _fasterRCNN(nn.Module):
 
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
-
+            
+            RCNN_loss_cls = torch.unsqueeze(RCNN_loss_cls, 0)
+            RCNN_loss_bbox = torch.unsqueeze(RCNN_loss_bbox, 0)
 
         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
@@ -127,6 +134,6 @@ class _fasterRCNN(nn.Module):
         normal_init(self.RCNN_cls_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(self.RCNN_bbox_pred, 0, 0.001, cfg.TRAIN.TRUNCATED)
 
-    def create_architecture(self):
+    def  create_architecture(self):
         self._init_modules()
         self._init_weights()

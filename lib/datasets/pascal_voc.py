@@ -230,6 +230,7 @@ class pascal_voc(imdb):
         # Load object bounding boxes into a data frame.
         for ix, obj in enumerate(objs):
             bbox = obj.find('bndbox')
+            print(bbox)
             # Make pixel indexes 0-based
             x1 = float(bbox.find('xmin').text) - 1
             y1 = float(bbox.find('ymin').text) - 1

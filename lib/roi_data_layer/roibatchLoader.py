@@ -18,6 +18,8 @@ import numpy as np
 import random
 import time
 import pdb
+import ipdb
+st = ipdb.set_trace
 
 class roibatchLoader(data.Dataset):
   def __init__(self, roidb, ratio_list, ratio_index, batch_size, num_classes, training=True, normalize=None):
@@ -49,9 +51,12 @@ class roibatchLoader(data.Dataset):
             target_ratio = ratio_list[right_idx]
         else:
             # for ratio cross 1, we make it to be 1.
-            target_ratio = 1
-
-        self.ratio_list_batch[left_idx:(right_idx+1)] = target_ratio
+            target_ratio =  np.array(1)
+        # st()
+        try:
+            self.ratio_list_batch[left_idx:(right_idx+1)] = torch.from_numpy(target_ratio)
+        except Exception:
+            self.ratio_list_batch[left_idx:(right_idx+1)] = target_ratio
 
 
   def __getitem__(self, index):
